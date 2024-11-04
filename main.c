@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 typedef struct matrix {
     double **values;
@@ -268,7 +269,7 @@ matrix_t *matrix_scalar_mul(matrix_t *mat, double scalar) {
 }
 
 matrix_t *cost_derivative(matrix_t *y, matrix_t *yhat) {
-    return matrix_sub(yhat, y);
+    return matrix_scalar_mul(matrix_sub(yhat, y), 2);
 }
 
 void backpropagation(network_t *nw, matrix_t *x, matrix_t *y,
@@ -325,18 +326,14 @@ void update(network_t *nw, matrix_t **x, matrix_t **y, double eta) {
 
 int main() {
 
-    srand(0);
+    srand(time(0));
 
     matrix_t **x = make_input(0);
     matrix_t **y = make_output(x, 4);
 
-    int sizes[] = {2, 2, 1};
+    int sizes[] = {2, 4, 1};
 
     network_t *nw = network_create(sizes, 3);
-
-    network_show(nw);
-
-    update(nw, x, y, 0.01);
 
     network_show(nw);
 
