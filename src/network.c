@@ -1,5 +1,6 @@
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_matrix.h>
+#include <gsl/gsl_sf.h>
 
 typedef struct network {
     size_t n;
@@ -12,15 +13,15 @@ gsl_vector **vectors_alloc(size_t *shape, size_t n) {
 
     gsl_vector **vs = malloc(n * sizeof(gsl_vector *));
 
-    for (int i = 0; i < n - 1; i++) {
-        vs[i] = gsl_vector_calloc(shape[i + 1]);
+    for (int i = 0; i < n; i++) {
+        vs[i] = gsl_vector_calloc(shape[i]);
     }
 
     return vs;
 }
 
 void vectors_free(gsl_vector **vs, size_t n) {
-    
+
     for (int i = 0; i < n; i++) {
         gsl_vector_free(vs[i]);
     }
@@ -71,8 +72,30 @@ void network_free(network_t *nw) {
     free(nw);
 }
 
-void matrix_vector_mul(gsl_matrix *a, gsl_vector *x, gsl_vector *y) {
-    gsl_blas_dgemv(CblasNoTrans, 1, a, x, 1, y);
+void mvmul(gsl_matrix *w, gsl_vector *a, gsl_vector *b, gsl_vector *z) {
+    gsl_vector_memcpy(z, b);
+    gsl_blas_dgemv(CblasNoTrans, 1, w, a, 1, z);
+}
+
+// This function must be optimized with SIMD.
+void vfapply(gsl_vector *dst, gsl_vector *src, double (*f)(double x)) {
+    for (size_t i = 0; i < src->size; i++) {
+        double y = f(gsl_vector_get(dst, i));
+        gsl_vector_set(src, i, y);
+    }
+}
+
+double sigmoid(double x) { return 1.0 / (1.0 + gsl_sf_exp(-x)); }
+
+void forward(network_t *nw, gsl_vector **as, gsl_vector **zs, gsl_vector *x) {
+
+    // Set the input to the first layer.
+    as[0] = x;
+
+    for (int i = 0; i < nw->n; i++) {
+        mvmul(nw->weights[i], as[i], nw->biases[i], zs[i]);
+        vfapply(as[i + 1], zs[i], sigmoid);
+    }
 }
 
 void backpropagation(network_t *nw, gsl_vector *x, gsl_vector *y) {
@@ -80,30 +103,8 @@ void backpropagation(network_t *nw, gsl_vector *x, gsl_vector *y) {
     gsl_vector **as = vectors_alloc(nw->shape, nw->n);
     gsl_vector **zs = vectors_alloc(nw->shape + 1, nw->n - 1);
 
-    as[0] = x;
-
-    for (int i = 0; i < nw->n; i++) {
-        matrix_vector_mul(nw->weights[i], as[i], zs[i]);
-    }
+    forward(nw, as, zs, x);
 
     vectors_free(as, nw->n);
     vectors_free(zs, nw->n - 1);
-}
-
-int main() {
-
-    gsl_matrix *a = gsl_matrix_alloc(2, 2);
-    gsl_matrix *b = gsl_matrix_alloc(2, 2);
-
-    for (int i = 0; i < 2; i++) {
-        for (int j = 0; j < 2; j++) {
-            gsl_matrix_set(a, i, j, i + j);
-            gsl_matrix_set(b, i, j, i - j);
-        }
-    }
-
-    gsl_matrix_add(a, b);
-
-    gsl_matrix_free(a);
-    gsl_matrix_free(b);
 }
