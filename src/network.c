@@ -18,7 +18,7 @@ network_t *network_alloc(size_t *shape, size_t n) {
 
     nw->n = n;
     nw->shape = shape;
-    nw->weights = matrices_alloc(shape, n);
+    nw->weights = weights_alloc(shape, n);
     nw->biases = vectors_alloc(shape, n);
 
     return nw;
@@ -34,7 +34,6 @@ void network_free(network_t *nw) {
     free(nw->shape);
     free(nw);
 }
-
 
 void forward(network_t *nw, gsl_vector **as, gsl_vector **zs, gsl_vector *x) {
 
