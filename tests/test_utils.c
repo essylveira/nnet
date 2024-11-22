@@ -179,3 +179,41 @@ Test(utils, vfapply) {
     gsl_vector_free(x);
     gsl_vector_free(y);
 }
+
+Test(utils, vvmul) {
+
+    double x[] = {0, 1, 2, 3, 4};
+    double y[] = {0, 1, 2, 3, 4};
+
+    gsl_vector *xv = vector_alloc_from_static(5, x);
+    gsl_vector *yv = vector_alloc_from_static(5, y);
+
+    gsl_matrix *m = gsl_matrix_calloc(5, 5);
+
+    vvmul(xv, yv, m);
+
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 5; j++) {
+            double a_ij = gsl_matrix_get(m, i, j);
+            cr_expect(ieee_ulp_eq(dbl, a_ij, i * j, 4),
+                      "The value of the matrix m at ij is not i * j.");
+        }
+    }
+}
+
+Test(utils, vhamadard) {
+
+    double x[] = {0, 1, 2, 3, 4};
+    double y[] = {0, 1, 2, 3, 4};
+
+    gsl_vector *xv = vector_alloc_from_static(5, x);
+    gsl_vector *yv = vector_alloc_from_static(5, y);
+
+    vhadamard(xv, yv);
+
+    for (int i = 0; i < 5; i++) {
+        double x_i = gsl_vector_get(xv, i);
+        cr_expect(ieee_ulp_eq(dbl, i * i, x_i, 4),
+                  "The value of xv at i is not i * i.");
+    }
+}
