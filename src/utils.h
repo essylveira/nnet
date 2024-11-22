@@ -2,6 +2,7 @@
 #define UTILS_H
 
 #include <gsl/gsl_matrix.h>
+#include <gsl/gsl_vector_double.h>
 #include <stdlib.h>
 
 gsl_vector **vectors_alloc(size_t *shape, size_t n);
@@ -12,11 +13,14 @@ void weights_free(gsl_matrix **ms, size_t n);
 gsl_vector *vector_alloc_from(double *x, size_t n);
 gsl_vector *vector_alloc_from_static(size_t n, double x[]);
 gsl_matrix *weights_alloc_from(double **x, size_t m, size_t n);
-gsl_matrix *weights_alloc_from_static(size_t m, size_t n, double [][n]);
+gsl_matrix *weights_alloc_from_static(size_t m, size_t n, double[][n]);
 
 void mvmul(gsl_matrix *w, gsl_vector *a, gsl_vector *b, gsl_vector *z);
 void vfapply(gsl_vector *dst, gsl_vector *src, double (*f)(double x));
+void vvmul(gsl_vector *a, gsl_vector *b, gsl_matrix *dst);
+void vhadamard(gsl_vector *dst, const gsl_vector *src);
 
 double sigmoid(double x);
+double sigmoid_prime(double x);
 
 #endif // UTILS_H

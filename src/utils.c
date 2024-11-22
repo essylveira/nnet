@@ -1,4 +1,5 @@
 #include "utils.h"
+#include <assert.h>
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_sf_exp.h>
 
@@ -99,6 +100,28 @@ void vfapply(gsl_vector *dst, gsl_vector *src, double (*f)(double x)) {
     }
 }
 
+void vvmul(gsl_vector *a, gsl_vector *b, gsl_matrix *dst) {
+
+    gsl_matrix_view av = gsl_matrix_view_vector(a, a->size, 1);
+    gsl_matrix_view bv = gsl_matrix_view_vector(b, b->size, 1);
+
+    gsl_blas_dgemm(
+        CblasNoTrans, CblasTrans, 1.0, &av.matrix, &bv.matrix, 1.0, dst);
+}
+
+void vhadamard(gsl_vector *dst, const gsl_vector *src) {
+
+    for (int i = 0; i < dst->size; i++) {
+        double a = gsl_vector_get(dst, i);
+        double b = gsl_vector_get(src, i);
+        gsl_vector_set(dst, i, a * b);
+    }
+}
+
 double sigmoid(double x) {
     return 1.0 / (1.0 + gsl_sf_exp(-x));
+}
+
+double sigmoid_prime(double x) {
+    return sigmoid(x) * (1 - sigmoid(x));
 }
